@@ -104,6 +104,11 @@ class Exoskeleton {
 
 	private function match_rule_method( $method, $rule ) {
 
+		//by default we meter HEAD requests as though they were GETs  rules may override this for particular routes
+		if ( $method === 'HEAD' && $rule[ 'treat_head_like_get' ] ) {
+			$method = 'GET';
+		}
+		
 		return ( 	$rule[ 'method' ] === 'any' || 
 					$rule[ 'method' ] === $method || 
 					in_array( $method, explode( ',', $rule[ 'method' ] ) ) 
