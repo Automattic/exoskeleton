@@ -27,6 +27,7 @@ class Exoskeleton {
 			'treat_head_like_get' => true,
 		];
 		$args = array_merge( $defaults, $args );
+
 		if ( !$this->validate_rule( $args ) ) {
 			return false;
 		}
@@ -53,7 +54,52 @@ class Exoskeleton {
 
 	//@todo make this
 	public function validate_rule( $args ) {
-		return true;
+
+		//every rule must have
+		$required = [ 'route', 'method', 'window', 'limit', 'lockout', 'treat_head_like_get' ];
+
+		//gets a list of the supported rules and tacks on 'HEAD' and the psedo-method 'any'
+		if ( class_exists( 'WP_REST_Server' ) ) {
+			$available_methods = WP_REST_Server::ALLMETHODS;
+			if ( false === strpos( $available_methods, 'HEAD' ) ) {
+				$available_methods .= ', HEAD';
+			} 
+			$available_methods .= ', any';
+		}else{
+			$available_methods = 'GET, POST, PUT, PATCH, DELETE, HEAD, any';
+		}
+
+		$valid = true;	//innocent until proven guilty
+		
+		foreach ( $required as $key ) {
+			
+			if ( !isset( $args[ $key ] ) ) {
+				$valid = false;
+			}else{
+				switch ( $key ) {
+					case 'method':
+						$valid = ( false !== strpos( $available_methods, $args[ $key ] ) );
+						break;
+					case 'lockout':
+					case 'window':
+					case 'limit':
+						$valid = ( is_numeric( $args[ $key ] ) && $args[ $key ] > 0 );
+						break;
+					case 'treat_head_like_get':
+						$valid = is_bool( $args[ $key ] );
+						break;
+					case 'route':	//don't validate routes
+					default:
+						$valid = true;
+						break;
+				}
+			}
+			if ( ! (bool) $valid ) {
+				return (bool) $valid;
+			}
+		}
+
+		return (bool) $valid;
 	}
 
 	public function process_custom_routes( $server ) {
@@ -70,9 +116,6 @@ class Exoskeleton {
  					//set rule path
 					$rule[ 'route' ] = $path;
 
-					if ( !$this->validate_rule( $rule ) ) {
-						return false;
-					}
 					$this->add_rule( $rule );
 				}
 			}
@@ -108,7 +151,7 @@ class Exoskeleton {
 		if ( $method === 'HEAD' && $rule[ 'treat_head_like_get' ] ) {
 			$method = 'GET';
 		}
-		
+
 		return ( 	$rule[ 'method' ] === 'any' || 
 					$rule[ 'method' ] === $method || 
 					in_array( $method, explode( ',', $rule[ 'method' ] ) ) 
