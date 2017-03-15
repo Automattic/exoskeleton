@@ -22,9 +22,9 @@ array(
 )
 ```
 
-### metering default endpoints
+### metering built-in endpoints
 
-To meter a default REST API endpoint, use the provided utility function `exoskeleton_add_rule`.
+To meter a built-in REST API endpoint, use the provided utility function `exoskeleton_add_rule`.
 Example:
 
 ```php
@@ -39,7 +39,7 @@ exoskeleton_add_rule(
 	]
 );
 ```
-causes the `/wp/v2/posts` to be metered for any method.  In the example, if more than 7 calls to this endpoint are detected in a 10 second period, a lockout of 20 seconds will occur, during which the 429 responses will be issued and the endpoint will not be dispatched.
+causes the route `/wp/v2/posts` to be metered for _any_ endpoint (see below for details on the method parameter.)  In the example, if more than 7 requests are detected in a 10 second period, a lockout of 20 seconds will occur, during which the 429 responses will be issued and the endpoint will not be dispatched.
 
 To set multiple endpoints, use `exoskeleton_add_rules` and pass an array of arrays like the above.
 
@@ -56,3 +56,13 @@ add_action( 'rest_api_init', function () {
   ) );
 } );
 ```
+
+### methods
+
+To specify which endpoints of a built-in route should be metered, use the `method` parameter.  Passing `any` here will cause the method to meter all requests regardless of method under a single counter -- ie: `limit` requests for any method at all within the time window will cause a lockout.
+
+`method` can also be a comma-separated list of methods, eg: `POST,GET,PUT`, in which case (as for `any`) all listed methods will be counted together.  To limit each endpoint of a built-in route separately, define a rule for each method rather than using a comma-separated list in a single rule.
+
+The boolean parameter `treat_head_like_get` may also be passed in a rule defintion.  If false, it causes `GET` and `HEAD` to be counted metered separately.  Otherwise, the limiter considers `HEAD`requests as if they were `GET`.  This is only really useful during testing, when `HEAD` requests are sometimes handy.
+
+When filtering custom endpoints, the `method` parameter is not needed, since one or more methods are already specified.  However, `treat_head_like_get` may still be passed and is respected for custom endpoints
