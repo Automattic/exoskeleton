@@ -24,6 +24,7 @@ class Exoskeleton {
 	public function add_rule( $args ) {
 		$defaults = [
 			'method' => 'any',
+			'treat_head_like_get' => true,
 		];
 		$args = array_merge( $defaults, $args );
 		if ( !$this->validate_rule( $args ) ) {
@@ -60,7 +61,15 @@ class Exoskeleton {
 			foreach ( $endpoints as $endpoint ) {
 				if ( isset( $endpoint[ 'exoskeleton' ] ) ) {
 					$rule = $endpoint[ 'exoskeleton' ];
+					//set rule methds -- turn multiple methods into a list
+					if ( is_array( $endpoint[ 'methods' ] ) ) {
+						$rule[ 'method' ] = implode( ',', array_keys( $endpoint[ 'methods' ] ) );
+ 					}else{
+ 						$rule[ 'method' ] = 'any';
+ 					}
+ 					//set rule path
 					$rule[ 'route' ] = $path;
+
 					if ( !$this->validate_rule( $rule ) ) {
 						return false;
 					}
@@ -84,13 +93,21 @@ class Exoskeleton {
 		foreach ( $this->rules as $key => $rule ) {
 			$match = preg_match( '@^' . $rule[ 'route' ] . '$@i', $path, $match_result );
 			if ( 1 === $match ) {
-				if ( $rule[ 'method' ] === 'any' || $rule[ 'method' ] === $method ) {
+				if ( $this->match_rule_method( $method, $rule ) ) {
 					$matched_rule = [ $key => $rule ];
 					$this->maybe_back_off( $matched_rule, $request );	
 				}
 			}
 		}
 		return $response;
+	}
+
+	private function match_rule_method( $method, $rule ) {
+
+		return ( 	$rule[ 'method' ] === 'any' || 
+					$rule[ 'method' ] === $method || 
+					in_array( $method, explode( ',', $rule[ 'method' ] ) ) 
+		);
 	}
 
 

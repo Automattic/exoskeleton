@@ -45,14 +45,14 @@ To set multiple endpoints, use `exoskeleton_add_rules` and pass an array of arra
 
 ### metering custom endpoints
 
-You can configure metering for custom endpoints during their definition, ie: when calling `register_rest_route`.  Just pass in a configuration array (minus the route) as `exoskeleton`.   Example:
+You can configure metering for custom endpoints during their definition, ie: when calling `register_rest_route`.  Just pass in a configuration array (minus the route and method which are already provided) as `exoskeleton`.   Example:
 
 ```php
 add_action( 'rest_api_init', function () {
   register_rest_route( 'myplugin/v1', '/author/(?P<id>\d+)', array(
     'methods' => 'GET',
     'callback' => 'my_awesome_func',
-    'exoskeleton' => [ 'window' => 10, 'limit'	=> 5, 'lockout' => 20, 'method' => 'any' ],
+    'exoskeleton' => [ 'window' => 10, 'limit'	=> 5, 'lockout' => 20 ],
   ) );
 } );
 ```
