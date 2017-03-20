@@ -1,6 +1,8 @@
 # Exoskeleton
 Exoskeleton provides self-contained, basic, configurable rate limiting for the WordPress REST API.  It works with both default and custom endpoints. 
 
+**NOTE:  This is experimental code.  It works in intiial testing, but please know that it has yet to be tested in a production setting.**
+
 ## What does it do?
 Exoskeleton counts each access to REST API endpoints you specify.  If the number of accesses exceeds a configured limit in a configured time window, Exoskeleton switches off the endpoint by not dispatching the route and ends execution after issuing a `429` (too many requests) response header along with a configured `Retry-After` header.
 
