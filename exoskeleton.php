@@ -12,7 +12,7 @@ require_once( plugin_dir_path( __FILE__ ) . 'classes/class.exoskeleton.php' );
 
 /**
  * Add a rule to an existing endpoint
- * @param Array $args 
+ * @param Array $args
  * @return Bool whether or not the rule was added
  */
 function exoskeleton_add_rule( $args ) {
