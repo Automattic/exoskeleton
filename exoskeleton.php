@@ -8,7 +8,7 @@
  * @package wp-exoskeleton
  */
 
-require_once( plugin_dir_path( __FILE__ ) . 'classes/class.exoskeleton.php' );
+require_once( plugin_dir_path( __FILE__ ) . 'classes/class-exoskeleton.php' );
 
 /**
  * Add a rule to an existing endpoint

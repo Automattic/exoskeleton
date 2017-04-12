@@ -204,13 +204,14 @@ class Exoskeleton {
 	private function match_rule_method( $method, $rule ) {
 
 		//by default we meter HEAD requests as though they were GETs  rules may override this for particular routes
-		if ( $method === 'HEAD' && $rule['treat_head_like_get'] ) {
+		if ( 'HEAD' === $method && $rule['treat_head_like_get'] ) {
 			$method = 'GET';
 		}
 
-		return ( 	$rule['method'] === 'any' ||
-					$rule['method'] === $method ||
-					in_array( $method, explode( ',', $rule['method'] ) )
+		return (
+			'any' === $rule['method'] ||
+			$rule['method'] === $method ||
+			in_array( $method, explode( ',', $rule['method'] ) )
 		);
 	}
 
@@ -306,11 +307,11 @@ class Exoskeleton {
 		$counter = get_transient( $counter_id );
 
 		$new_counter = [];
-		$new_counter['started_counting_at'] = ( $counter === false ) ? time() : $counter['started_counting_at'];
-		$new_counter['value'] = ( $counter === false ) ? 1 : $counter['value'] + 1;
+		$new_counter['started_counting_at'] = ( false === $counter ) ? time() : $counter['started_counting_at'];
+		$new_counter['value'] = ( false === $counter ) ? 1 : $counter['value'] + 1;
 
 		// the transient life.  This is either the rule window (for a new counter) or the window minus the number of seconds we've already been waiting.  Make sure we set the transient to last at least 1 second here.
-		$time_left = ( $counter === false ) ? $matched_rule[ $rule_id ]['window'] : max( 1, $matched_rule[ $rule_id ]['window'] - ( time() - $counter['started_counting_at'] ) );
+		$time_left = ( false === $counter ) ? $matched_rule[ $rule_id ]['window'] : max( 1, $matched_rule[ $rule_id ]['window'] - ( time() - $counter['started_counting_at'] ) );
 
 		set_transient( $counter_id, $new_counter, $time_left );
 		return $new_counter['value'];
