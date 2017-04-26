@@ -283,6 +283,7 @@ class Exoskeleton {
 		$retry_after = ( isset( $lock['lock_set'] ) ) ? max( $lockout - ( time() - $lock['lock_set'] ), 1 ) : $lockout;
 		status_header( 429, 'Exoskeleton: too many requests for this endpoint.  Please consult Retry-After and come back later.  Meanwhile enjoy a well-deserved REST');
 		@header( "Retry-After: $retry_after");
+		@header( "Cache-Control: public max-age=$retry_after" );
 		die();
 	}
 
