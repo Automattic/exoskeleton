@@ -32,7 +32,7 @@ class Exoskeleton {
 	 * @return Exoskeleton
 	 */
 	public static function get_instance() {
-		if ( !self::$instance ) {
+		if ( ! self::$instance ) {
 			self::$instance = new Exoskeleton;
 		}
 		return self::$instance;
@@ -40,7 +40,7 @@ class Exoskeleton {
 
 	/**
 	 * Add a rule after validating it
-	 * @param Array $args 
+	 * @param Array $args
 	 * @return Bool whether or not the rule was added
 	 */
 	public function add_rule( $args ) {
@@ -50,33 +50,33 @@ class Exoskeleton {
 		];
 		$args = array_merge( $defaults, $args );
 
-		if ( !$this->validate_rule( $args ) ) {
+		if ( ! $this->validate_rule( $args ) ) {
 			return false;
 		}
 		$key = $this->generate_rule_key( $args );
 		$any_key = $this->anyize_rule_key( $key );
-		if ( !isset( $this->rules[ $key ] ) && !isset( $this->rules[ $any_key ] ) ) {
+		if ( ! isset( $this->rules[ $key ] ) && ! isset( $this->rules[ $any_key ] ) ) {
 			$this->rules[ $key ] = $args;
 			return true;
-		}else{
+		} else {
 			return false;
 		}
 	}
 
 	/**
 	 * Makes a key for the rule based on its method and argyments
-	 * @param Array $rule 
+	 * @param Array $rule
 	 * @return String the generated key
 	 */
 	private function generate_rule_key( $rule ) {
-		$method = $rule[ 'method' ];
-		unset( $rule[ 'method' ] );
+		$method = $rule['method'];
+		unset( $rule['method'] );
 		return md5( serialize( $rule ) ) . '_' . $method;
 	}
 
 	/**
 	 * Turn a _method key into an _any key
-	 * @param String $key 
+	 * @param String $key
 	 * @return String the key with a _any suffix
 	 */
 	private function anyize_rule_key( $key ) {
@@ -86,7 +86,7 @@ class Exoskeleton {
 
 	/**
 	 * Make sure a rule is valid.  Valid rules are those with a valid method or "any", a positive numeric argument for lockout, window and limit and a boolean argument for treat_head_like_get.  We don't validate routes.
-	 * @param Array $args 
+	 * @param Array $args
 	 * @return Bool whether the rule is valid
 	 */
 	public function validate_rule( $args ) {
@@ -99,19 +99,19 @@ class Exoskeleton {
 			$available_methods = WP_REST_Server::ALLMETHODS;
 			if ( false === strpos( $available_methods, 'HEAD' ) ) {
 				$available_methods .= ', HEAD';
-			} 
+			}
 			$available_methods .= ', any';
-		}else{
+		} else {
 			$available_methods = 'GET, POST, PUT, PATCH, DELETE, HEAD, any';
 		}
 
 		$valid = true;	//innocent until proven guilty
-		
+
 		foreach ( $required as $key ) {
-			
-			if ( !isset( $args[ $key ] ) ) {
+
+			if ( ! isset( $args[ $key ] ) ) {
 				$valid = false;
-			}else{
+			} else {
 				switch ( $key ) {
 					case 'method':
 						$valid = ( false !== strpos( $available_methods, $args[ $key ] ) );
@@ -140,22 +140,22 @@ class Exoskeleton {
 
 	/**
 	 * Custom (non-built-in) routes receive their rules when they are defined.  This callback sniffs out rules from all the server's endpoints and adds them.
-	 * @param WP_REST_Server $server 
+	 * @param WP_REST_Server $server
 	 * @return null
 	 */
 	public function process_custom_routes( $server ) {
-		foreach( $server->get_routes() as $path => $endpoints ) {
+		foreach ( $server->get_routes() as $path => $endpoints ) {
 			foreach ( $endpoints as $endpoint ) {
-				if ( isset( $endpoint[ 'exoskeleton' ] ) ) {
-					$rule = $endpoint[ 'exoskeleton' ];
+				if ( isset( $endpoint['exoskeleton'] ) ) {
+					$rule = $endpoint['exoskeleton'];
 					//set rule methds -- turn multiple methods into a list
-					if ( is_array( $endpoint[ 'methods' ] ) ) {
-						$rule[ 'method' ] = implode( ',', array_keys( $endpoint[ 'methods' ] ) );
- 					}else{
- 						$rule[ 'method' ] = 'any';
- 					}
- 					//set rule path
-					$rule[ 'route' ] = $path;
+					if ( is_array( $endpoint['methods'] ) ) {
+						$rule['method'] = implode( ',', array_keys( $endpoint['methods'] ) );
+					} else {
+						$rule['method'] = 'any';
+					}
+					 //set rule path
+					$rule['route'] = $path;
 
 					$this->add_rule( $rule );
 				}
@@ -165,15 +165,15 @@ class Exoskeleton {
 
 	/**
 	 * Decide whether a given WP_REST_Request is subject to an Exoskeleton Rule.  If so, it invoke the limiter.
-	 * @param WP_REST_Response $response 
-	 * @param WP_REST_Server $handler 
-	 * @param WP_REST_Request $request 
+	 * @param WP_REST_Response $response
+	 * @param WP_REST_Server $handler
+	 * @param WP_REST_Request $request
 	 * @return WP_REST_Response | null
 	 */
 	public function shields_up( $response, $handler, $request ) {
 
 		// if there's already a nonempty response, someone else got here first, so bail
-		if ( !empty( $response ) ) {
+		if ( ! empty( $response ) ) {
 			return $response;
 		}
 
@@ -182,11 +182,13 @@ class Exoskeleton {
 		$matched_rule = [];
 
 		foreach ( $this->rules as $key => $rule ) {
-			$match = preg_match( '@^' . $rule[ 'route' ] . '$@i', $path, $match_result );
+			$match = preg_match( '@^' . $rule['route'] . '$@i', $path, $match_result );
 			if ( 1 === $match ) {
 				if ( $this->match_rule_method( $method, $rule ) ) {
-					$matched_rule = [ $key => $rule ];
-					$this->maybe_back_off( $matched_rule );	
+					$matched_rule = [
+						$key => $rule,
+					];
+					$this->maybe_back_off( $matched_rule );
 				}
 			}
 		}
@@ -195,30 +197,31 @@ class Exoskeleton {
 
 	/**
 	 * For a given rule, does the method match?
-	 * @param String $method 
-	 * @param Array $rule 
+	 * @param String $method
+	 * @param Array $rule
 	 * @return Bool whether or not the method applies to the rule
 	 */
 	private function match_rule_method( $method, $rule ) {
 
 		//by default we meter HEAD requests as though they were GETs  rules may override this for particular routes
-		if ( $method === 'HEAD' && $rule[ 'treat_head_like_get' ] ) {
+		if ( 'HEAD' === $method && $rule['treat_head_like_get'] ) {
 			$method = 'GET';
 		}
 
-		return ( 	$rule[ 'method' ] === 'any' || 
-					$rule[ 'method' ] === $method || 
-					in_array( $method, explode( ',', $rule[ 'method' ] ) ) 
+		return (
+			'any' === $rule['method'] ||
+			$rule['method'] === $method ||
+			in_array( $method, explode( ',', $rule['method'] ) )
 		);
 	}
 
 	/**
 	 * Decide whether to tell the request to back off based on the current state of the applicable rule's lock.  Also, increment the rule's counter, and set a lock if needed.
-	 * @param Array $matched_rule 
+	 * @param Array $matched_rule
 	 * @return null
 	 */
 	private function maybe_back_off( $matched_rule ) {
-		
+
 		$rule_id = array_keys( $matched_rule )[0];
 		$lock = $this->get_lock( $rule_id );
 
@@ -230,14 +233,14 @@ class Exoskeleton {
 		$counter = $this->increment_counter( $rule_id, $matched_rule );
 
 		//now see if we need to lock things down for next time
-		if ( $counter >= $matched_rule[ $rule_id ][ 'limit' ] ) {
+		if ( $counter >= $matched_rule[ $rule_id ]['limit'] ) {
 			$this->set_lock( $rule_id, $matched_rule );
 		}
 	}
 
 	/**
 	 * Check for a lock on a given rule or it's universal version
-	 * @param String $rule_id 
+	 * @param String $rule_id
 	 * @return Array | Bool  the lock, or false if no lock is found
 	 */
 	private function get_lock( $rule_id ) {
@@ -260,37 +263,42 @@ class Exoskeleton {
 
 	/**
 	 * Sets a lock (transient) lasting lockout seconds for a matched rule_id
-	 * @param String $rule_id 
-	 * @param Array $matched_rule 
+	 * @param String $rule_id
+	 * @param Array $matched_rule
 	 * @return Bool whether or not the lock was successfully set
 	 */
 	private function set_lock( $rule_id, $matched_rule ) {
 		$lock = self::LOCK_PREFIX . $rule_id;
-		$lock_data = [ 'lockout' => $matched_rule[ $rule_id ]['lockout' ], 'lock_set' => time() ];
-		return set_transient( $lock, $lock_data, $matched_rule[ $rule_id ]['lockout' ] );
+		$lock_data = [
+			'lockout' => $matched_rule[ $rule_id ]['lockout'],
+			'lock_set' => time(),
+		];
+		return set_transient( $lock, $lock_data, $matched_rule[ $rule_id ]['lockout'] );
 	}
 
 	/**
 	 * Terminate the request after sending a 429 and Retry-After header
-	 * @param String $rule_id 
-	 * @param Array $matched_rule 
-	 * @param Array $lock 
+	 * @param String $rule_id
+	 * @param Array $matched_rule
+	 * @param Array $lock
 	 * @return null
 	 */
 	private function back_off_please( $rule_id, $matched_rule, $lock ) {
 
-		$lockout = $matched_rule[ $rule_id ][ 'lockout' ];
+		$lockout = $matched_rule[ $rule_id ]['lockout'];
 		$retry_after = ( isset( $lock['lock_set'] ) ) ? max( $lockout - ( time() - $lock['lock_set'] ), 1 ) : $lockout;
 		status_header( 429, 'Exoskeleton: too many requests for this endpoint.  Please consult Retry-After and come back later.  Meanwhile enjoy a well-deserved REST');
 		@header( "Retry-After: $retry_after");
 		@header( "Cache-Control: public max-age=$retry_after" );
+		status_header( 429, 'Exoskeleton: too many requests for this endpoint.  Please consult Retry-After and come back later.  Meanwhile enjoy a well-deserved REST' );
+		@header( "Retry-After: $retry_after" );
 		die();
 	}
 
 	/**
 	 * Increment the counter for requests on the matched endpoint.
-	 * @param String $rule_id 
-	 * @param Array $matched_rule 
+	 * @param String $rule_id
+	 * @param Array $matched_rule
 	 * @return Int the value of the counter after increment
 	 */
 	private function increment_counter( $rule_id, $matched_rule ) {
@@ -299,13 +307,13 @@ class Exoskeleton {
 		$counter = get_transient( $counter_id );
 
 		$new_counter = [];
-		$new_counter[ 'started_counting_at' ] = ( $counter === false ) ? time() : $counter[ 'started_counting_at' ];
-		$new_counter[ 'value' ] = ( $counter === false ) ? 1 : $counter[ 'value' ] + 1;
+		$new_counter['started_counting_at'] = ( false === $counter ) ? time() : $counter['started_counting_at'];
+		$new_counter['value'] = ( false === $counter ) ? 1 : $counter['value'] + 1;
 
 		// the transient life.  This is either the rule window (for a new counter) or the window minus the number of seconds we've already been waiting.  Make sure we set the transient to last at least 1 second here.
-		$time_left = ( $counter === false ) ? $matched_rule[ $rule_id ][ 'window' ] : max( 1, $matched_rule[ $rule_id ][ 'window' ] - ( time() - $counter[ 'started_counting_at' ] ) );
+		$time_left = ( false === $counter ) ? $matched_rule[ $rule_id ]['window'] : max( 1, $matched_rule[ $rule_id ]['window'] - ( time() - $counter['started_counting_at'] ) );
 
 		set_transient( $counter_id, $new_counter, $time_left );
-		return $new_counter[ 'value' ];
+		return $new_counter['value'];
 	}
 }
