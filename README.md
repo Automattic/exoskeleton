@@ -1,4 +1,4 @@
-# Exoskeleton
+# Exoskeleton [![Build Status](https://travis-ci.org/Automattic/exoskeleton.svg?branch=master)](https://travis-ci.org/Automattic/exoskeleton)
 Exoskeleton provides self-contained, basic, configurable rate limiting for the WordPress REST API.  It works with both default and custom endpoints. 
 
 **NOTE:  This is experimental code.  It works in initial testing, but please know that it has yet to be tested in a production setting.**
