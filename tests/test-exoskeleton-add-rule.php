@@ -20,33 +20,33 @@ class ExoskeletonAddRuleTest extends WP_UnitTestCase {
 		parent::setUpBeforeClass();
 
 		self::$single_valid_rule = array(
-				'route' => '/wp/v2/posts',
-				'window' => 5,
-				'limit'	=> 2,
-				'lockout' => 30,
-				'method' => 'any',
+			'route' => '/wp/v2/posts',
+			'window' => 5,
+			'limit'	=> 2,
+			'lockout' => 30,
+			'method' => 'any',
 		);
 
 		self::$three_valid_rules = array(
-				[
-					'route' => '/wp/v2/posts',
-					'window' => 10,
-					'limit'	=> 25,
-					'lockout' => 200,
-					'method' => 'any',
-				],[
-					'route' => '/wp/v2/post/1',
-					'window' => 100,
-					'limit'	=> 5,
-					'lockout' => 60,
-					'method' => 'GET',
-				],[
-					'route' => '/wp/v2/post/2',
-					'window' => 90,
-					'limit'	=> 2,
-					'lockout' => 30,
-					'method' => 'GET',
-				]
+			[
+				'route' => '/wp/v2/posts',
+				'window' => 10,
+				'limit'	=> 25,
+				'lockout' => 200,
+				'method' => 'any',
+			],[
+				'route' => '/wp/v2/post/1',
+				'window' => 100,
+				'limit'	=> 5,
+				'lockout' => 60,
+				'method' => 'GET',
+			],[
+				'route' => '/wp/v2/post/2',
+				'window' => 90,
+				'limit'	=> 2,
+				'lockout' => 30,
+				'method' => 'GET',
+			]
 		);
 	}
 

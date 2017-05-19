@@ -22,11 +22,11 @@ class ExoskeletonRestApiCallsTest extends WP_UnitTestCase {
 		parent::setUpBeforeClass();
 
 		self::$single_valid_rule = array(
-				'route' => '/wp/v2/posts',
-				'window' => 5,
-				'limit'	=> 1,
-				'lockout' => 5,
-				'method' => 'any',
+			'route' => '/wp/v2/posts',
+			'window' => 5,
+			'limit'	=> 1,
+			'lockout' => 5,
+			'method' => 'any',
 		);
 	}
 
