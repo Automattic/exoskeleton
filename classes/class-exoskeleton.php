@@ -292,7 +292,14 @@ class Exoskeleton {
 		@header( "Cache-Control: public max-age=$retry_after" );
 		status_header( 429, 'Exoskeleton: too many requests for this endpoint.  Please consult Retry-After and come back later.  Meanwhile enjoy a well-deserved REST' );
 		@header( "Retry-After: $retry_after" );
+
+		// Do not die if testing.
+		if ( defined( 'PHPUNIT_EXOSKELETON_TESTING' ) ) {
+			throw new Exception('locked');
+		}
+
 		die();
+
 	}
 
 	/**
