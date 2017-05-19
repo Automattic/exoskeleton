@@ -155,12 +155,5 @@ class ExoskeletonAddRuleTest extends WP_UnitTestCase {
 		$this->assertTrue( exoskeleton_add_rule( $args ) );
 	}
 
-	/**
-	 * Test route is not limited
-	 */
-	function test_route_is_not_limited() {
-		$this->assertTrue( exoskeleton_add_rule( $this::$single_valid_rule ) );
-
-	}
 
 }
