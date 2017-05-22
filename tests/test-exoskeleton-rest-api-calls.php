@@ -10,26 +10,6 @@
  */
 class ExoskeletonRestApiCallsTest extends WP_UnitTestCase {
 
-	protected static $single_valid_rule;
-	protected static $three_valid_rules;
-
-	protected $server;
-
-	/**
-	 * Define some valid rule sets to reduce duplication in tests.
-	 */
-	static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
-
-		self::$single_valid_rule = array(
-			'route' => '/wp/v2/posts',
-			'window' => 5,
-			'limit'	=> 1,
-			'lockout' => 5,
-			'method' => 'any',
-		);
-	}
-
     function setUp() {
 		parent::setUp();
 
@@ -37,30 +17,111 @@ class ExoskeletonRestApiCallsTest extends WP_UnitTestCase {
 		$instance = Exoskeleton::get_instance();
 		$instance->rules = [];
 
-		exoskeleton_add_rule( $this::$single_valid_rule );
 
     }
 
 	/**
-	 * Test route is not limited
-	 */
-	function test_route_is_not_limited() {
-		$request = new WP_REST_Request( 'GET', '/wp/v2/posts' );
-		$response = rest_do_request($request);
-		$this->assertEquals( 200, $response->status );
-	}
+	 * Check that requests do get properly limited
+     * @dataProvider limitTestingProvider
+     */
+    public function test_limits_are_applied( $rule, $test_method = false )
+    {
+		if ( empty( $test_method ) ) {
+			$test_method = $rule['method'];
+		}
+		$this->assertTrue( exoskeleton_add_rule( $rule ) );
+        for( $request = 1; $request <= $rule['limit'] + 1; ++$request ) {
+			if ( $request < $rule['limit'] ) {
+				$response = rest_do_request( new WP_REST_Request( $test_method, $rule['route'] ) );
+				$this->assertEquals( 200, $response->status );
+			} else {
+				$this->expectException( Exception::class );
+				$this->expectExceptionMessage( 'locked' );
+				$response = rest_do_request( new WP_REST_Request( $test_method, $rule['route'] ) );
+			}
+		}
+    }
+
 
 	/**
-	 * Test route has been restricted
-	 */
-	function test_route_is_limited() {
-		$request = new WP_REST_Request( 'GET', '/wp/v2/posts' );
-		$response = rest_do_request($request);
-		$this->assertEquals( 200, $response->status );
+	 * Make sure that requests falling outside the window do not get imited.
+     * @dataProvider limitTestingProvider
+     */
+    public function test_limit_window_expiry( $rule, $test_method = false )
+    {
+		if ( empty( $test_method ) ) {
+			$test_method = $rule['method'];
+		}
+		$this->assertTrue( exoskeleton_add_rule( $rule ) );
+        for( $request = 1; $request <= $rule['limit'] + 1; ++$request ) {
+			if ( $request < $rule['limit'] ) {
+				$response = rest_do_request( new WP_REST_Request( $test_method, $rule['route'] ) );
+				$this->assertEquals( 200, $response->status );
+			} else {
+				sleep( $rule['window'] + 1 );
+				$response = rest_do_request( new WP_REST_Request( $test_method, $rule['route'] ) );
+				$this->assertEquals( 200, $response->status );
+			}
+		}
+    }
 
-		$this->expectException(Exception::class);
-		$this->expectExceptionMessage('locked');
-		$response = rest_do_request($request);
-	}
+	/**
+	 * Limits should only be applied if the correct method is requested
+     * @dataProvider limitTestingProvider
+     */
+    public function test_different_methods_not_limited( $rule, $test_method = false )
+    {
+		// Change the test method
+		if ( empty( $test_method ) ) {
+			$test_method = 'HEAD';
+		} else {
+			$this->assertNull( null ); // TODO Test third request with valid method
+			return;
+		}
+		$this->assertTrue( exoskeleton_add_rule( $rule ) );
+        for( $request = 1; $request <= $rule['limit'] + 1; ++$request ) {
+			$response = rest_do_request( new WP_REST_Request( $test_method, $rule['route'] ) );
+			$this->assertEquals( 200, $response->status );
+		}
+    }
+
+
+
+	public function limitTestingProvider()
+    {
+        return [
+			[
+				array(
+					'route' => '/wp/v2/posts',
+					'window' => 5,
+					'limit'	=> 3,
+					'lockout' => 5,
+					'method' => 'GET',
+					'treat_head_like_get' => false,
+				)
+			],
+			[
+				array(
+					'route' => '/wp/v2/categories',
+					'window' => 2,
+					'limit'	=> 10,
+					'lockout' => 5,
+					'method' => 'GET',
+					'treat_head_like_get' => false,
+				)
+			],
+			[
+				array(
+					'route' => '/wp/v2/categories',
+					'window' => 2,
+					'limit'	=> 10,
+					'lockout' => 5,
+					'method' => 'GET',
+					'treat_head_like_get' => true,
+				),
+				'HEAD',
+			]
+		];
+    }
 
 }
