@@ -170,4 +170,13 @@ class ExoskeletonAddRuleTest extends WP_UnitTestCase {
 		$this->assertTrue( exoskeleton_add_rule( $args ) );
 	}
 
+	/**
+	 * Check that exoskeleton will not overwrite an already existing rule
+	 */
+	function test_internal_add_rule_method_fails_when_adding_existing_rule() {
+		$exoskeleton = Exoskeleton::get_instance();
+		$this->assertTrue( exoskeleton_add_rule( $this::$single_valid_rule ) );
+		$this->assertFalse( $exoskeleton->add_rule( $this::$single_valid_rule ) );
+	}
+
 }
