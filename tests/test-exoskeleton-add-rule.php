@@ -53,6 +53,7 @@ class ExoskeletonAddRuleTest extends WP_UnitTestCase {
     function setUp() {
 		$instance = Exoskeleton::get_instance();
 		$instance->rules = [];
+
     }
 
 	/**
@@ -154,6 +155,5 @@ class ExoskeletonAddRuleTest extends WP_UnitTestCase {
 
 		$this->assertTrue( exoskeleton_add_rule( $args ) );
 	}
-
 
 }
