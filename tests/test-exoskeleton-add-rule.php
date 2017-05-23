@@ -10,7 +10,18 @@
  */
 class ExoskeletonAddRuleTest extends WP_UnitTestCase {
 
+	/**
+	 * One rule definition
+	 *
+	 * @var array A single valid rule definition
+	 */
 	protected static $single_valid_rule;
+
+	/**
+	 * Three rule definitions
+	 *
+	 * @var array Three valid rule definitions
+	 */
 	protected static $three_valid_rules;
 
 	/**
@@ -46,15 +57,18 @@ class ExoskeletonAddRuleTest extends WP_UnitTestCase {
 				'limit'	=> 2,
 				'lockout' => 30,
 				'method' => 'GET',
-			]
+			],
 		);
 	}
 
-    function setUp() {
+	/**
+	 * Pre test setup
+	 */
+	function setUp() {
 		$instance = Exoskeleton::get_instance();
 		$instance->rules = [];
 
-    }
+	}
 
 	/**
 	 * Get instance of Exoskeleton

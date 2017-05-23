@@ -7,7 +7,7 @@
 
 $_tests_dir = getenv( 'WP_TESTS_DIR' );
 if ( ! $_tests_dir ) {
-	$_tests_dir = dirname( __FILE__ ).'/../../../../wordpress-tests-lib';
+	$_tests_dir = dirname( __FILE__ ) . '/../../../../wordpress-tests-lib';
 }
 
 // Give access to tests_add_filter() function.

@@ -11,7 +11,10 @@
 class ExoskeletonRestApiCallsTest extends WP_UnitTestCase {
 
 
-    function setUp() {
+	/**
+	 * Pre test setup
+	 */
+	function setUp() {
 		parent::setUp();
 
 		// Clear existing rules.
@@ -20,43 +23,54 @@ class ExoskeletonRestApiCallsTest extends WP_UnitTestCase {
 
 		add_action( 'rest_api_init', function () {
 			register_rest_route( 'exoskeleton/v1', '/exoskeleton/(?P<id>\d+)', array(
-			  'methods' => 'GET',
-			  'callback' => [ $this, 'custom_route_callback' ],
+				'methods' => 'GET',
+				'callback' => [ $this, 'custom_route_callback' ],
 			) );
 		} );
-    }
+	}
 
 
 	/**
 	 * Test key generation
-     * @dataProvider limitTestingProvider
-     */
+	 *
+	 * @dataProvider limitTestingProvider
+	 * @param array $rule exoskeleton rule array.
+	 * @param array $test extra test data.
+	 */
 	public function test_key_generation( $rule, $test ) {
 		exoskeleton_add_rule( $rule );
 		$exoskeleton = Exoskeleton::get_instance();
-		$this->assertEquals( $test['key'], key($exoskeleton->rules) );
+		$this->assertEquals( $test['key'], key( $exoskeleton->rules ) );
 	}
 
 	/**
 	 * Simple method to provide a callback for custom routes during testing
-	 * @param mixed $data
-	 * @return mixed
+	 *
+	 * @param mixed $data data passed into the request for this route.
+	 * @return mixed returns the data that was input to provide a valid output.
 	 */
 	public function custom_route_callback( $data ) {
 		return $data;
 	}
 
 
+	/**
+	 * Check limits are honoured if a route is registered with exoskeleton limits.
+	 */
 	function test_pre_registered_custom_route_rules() {
 
 		add_action( 'rest_api_init', function () {
 			register_rest_route( 'exoskeleton/v1', '/test/(?P<id>\d+)', array(
-			  'methods' => 'GET',
-			  'callback' => [ $this, 'custom_route_callback' ],
-			  'exoskeleton' => [ 'window' => 10, 'limit'    => 5, 'lockout' => 20 ],
+				'methods' => 'GET',
+				'callback' => [ $this, 'custom_route_callback' ],
+				'exoskeleton' => [
+				  'window' => 10,
+				  'limit' => 5,
+				  'lockout' => 20,
+				],
 			) );
 		} );
-        for( $request = 1; $request <= 6; ++$request ) {
+		for ( $request = 1; $request <= 6; ++$request ) {
 			if ( $request < 5 ) {
 				$response = rest_do_request( new WP_REST_Request( 'GET', '/exoskeleton/v1/test/1' ) );
 				$this->assertEquals( 200, $response->status );
@@ -71,14 +85,17 @@ class ExoskeletonRestApiCallsTest extends WP_UnitTestCase {
 
 	/**
 	 * Check that requests do get properly limited
-     * @dataProvider limitTestingProvider
-     */
-    public function test_limits_are_applied( $rule, $test ) {
+	 *
+	 * @dataProvider limitTestingProvider
+	 * @param array $rule exoskeleton rule array.
+	 * @param array $test extra test data.
+	 */
+	public function test_limits_are_applied( $rule, $test ) {
 		if ( empty( $test['method'] ) ) {
 			$test['method'] = $rule['method'];
 		}
 		$this->assertTrue( exoskeleton_add_rule( $rule ) );
-        for( $request = 1; $request <= $rule['limit'] + 1; ++$request ) {
+		for ( $request = 1; $request <= $rule['limit'] + 1; ++$request ) {
 			if ( $request < $rule['limit'] ) {
 				$response = rest_do_request( new WP_REST_Request( $test['method'], $rule['route'] ) );
 				$this->assertEquals( 200, $response->status );
@@ -88,19 +105,22 @@ class ExoskeletonRestApiCallsTest extends WP_UnitTestCase {
 				$response = rest_do_request( new WP_REST_Request( $test['method'], $rule['route'] ) );
 			}
 		}
-    }
+	}
 
 
 	/**
-	 * Make sure that requests falling outside the window do not get imited.
-     * @dataProvider limitTestingProvider
-     */
-    public function test_limit_window_expiry( $rule, $test ) {
+	 * Make sure that requests falling outside the window do not get limited.
+	 *
+	 * @dataProvider limitTestingProvider
+	 * @param array $rule exoskeleton rule array.
+	 * @param array $test extra test data.
+	 */
+	public function test_limit_window_expiry( $rule, $test ) {
 		if ( empty( $test['method'] ) ) {
 			$test['method'] = $rule['method'];
 		}
 		$this->assertTrue( exoskeleton_add_rule( $rule ) );
-        for( $request = 1; $request <= $rule['limit'] + 1; ++$request ) {
+		for ( $request = 1; $request <= $rule['limit'] + 1; ++$request ) {
 			if ( $request < $rule['limit'] ) {
 				$response = rest_do_request( new WP_REST_Request( $test['method'], $rule['route'] ) );
 				$this->assertEquals( 200, $response->status );
@@ -110,31 +130,38 @@ class ExoskeletonRestApiCallsTest extends WP_UnitTestCase {
 				$this->assertEquals( 200, $response->status );
 			}
 		}
-    }
+	}
 
 	/**
 	 * Limits should only be applied if the correct method is requested
-     * @dataProvider limitTestingProvider
-     */
-    public function test_different_methods_not_limited( $rule, $test ) {
-		// Change the test method
+	 *
+	 * @dataProvider limitTestingProvider
+	 * @param array $rule exoskeleton rule array.
+	 * @param array $test extra test data.
+	 */
+	public function test_different_methods_not_limited( $rule, $test ) {
+		// Change the test or rule method for testing.
 		if ( empty( $test['method'] ) ) {
 			$test['method'] = 'HEAD';
 		} else {
 			$rule['method'] = 'POST';
 		}
 		$this->assertTrue( exoskeleton_add_rule( $rule ) );
-        for( $request = 1; $request <= $rule['limit'] + 1; ++$request ) {
+		for ( $request = 1; $request <= $rule['limit'] + 1; ++$request ) {
 			$response = rest_do_request( new WP_REST_Request( $test['method'], $rule['route'] ) );
 			$this->assertEquals( 200, $response->status );
 		}
-    }
+	}
 
 
 
-
+	/**
+	 * Data provider
+	 *
+	 * @return array exoskeleton rule information and test data.
+	 */
 	public function limitTestingProvider() {
-        return [
+		return [
 			[
 				'rule' => [
 					'route' => '/wp/v2/posts',
@@ -146,7 +173,7 @@ class ExoskeletonRestApiCallsTest extends WP_UnitTestCase {
 				],
 				'test' => [
 					'key' => '01dd28291a6b5b95802281831ec3d6f5_GET',
-				]
+				],
 			],
 			[
 				'rule' => [
@@ -159,7 +186,7 @@ class ExoskeletonRestApiCallsTest extends WP_UnitTestCase {
 				],
 				'test' => [
 					'key' => 'fd568c1eb104fbad04765b9f2f0100ed_GET',
-				]
+				],
 			],
 			[
 				'rule' => [
@@ -173,7 +200,7 @@ class ExoskeletonRestApiCallsTest extends WP_UnitTestCase {
 				'test' => [
 					'method' => 'HEAD',
 					'key' => '6ae5a5054b0a306061f10b9c1b193183_GET',
-				]
+				],
 			],
 			[
 				'rule' => [
@@ -186,9 +213,9 @@ class ExoskeletonRestApiCallsTest extends WP_UnitTestCase {
 				],
 				'test' => [
 					'key' => 'b09a74d523deb0962e21cafaadc63679_GET',
-				]
+				],
 			],
 		];
-    }
+	}
 
 }
