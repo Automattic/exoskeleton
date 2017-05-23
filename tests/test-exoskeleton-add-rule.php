@@ -36,6 +36,7 @@ class ExoskeletonAddRuleTest extends WP_UnitTestCase {
 			'limit'	=> 2,
 			'lockout' => 30,
 			'method' => 'any',
+			'treat_head_like_get' => false,
 		);
 
 		self::$three_valid_rules = array(
@@ -177,6 +178,24 @@ class ExoskeletonAddRuleTest extends WP_UnitTestCase {
 		$exoskeleton = Exoskeleton::get_instance();
 		$this->assertTrue( exoskeleton_add_rule( $this::$single_valid_rule ) );
 		$this->assertFalse( $exoskeleton->add_rule( $this::$single_valid_rule ) );
+	}
+
+	/**
+	 * Check that exoskeleton validates rules with false rule
+	 */
+	function test_internal_validate_rule_method_fails_when_adding_invalid_rule() {
+		$exoskeleton = Exoskeleton::get_instance();
+		$invalid_rule = $this::$single_valid_rule;
+		unset( $invalid_rule['method'] );
+		$this->assertFalse( $exoskeleton->validate_rule( $invalid_rule ) );
+	}
+
+	/**
+	 * Check that exoskeleton validates rules with valid rule
+	 */
+	function test_internal_validate_rule_method_fails_when_adding_a_valid_rule() {
+		$exoskeleton = Exoskeleton::get_instance();
+		$this->assertTrue( $exoskeleton->validate_rule( $this::$single_valid_rule ) );
 	}
 
 }
