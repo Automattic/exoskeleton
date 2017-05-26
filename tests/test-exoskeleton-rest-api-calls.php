@@ -50,7 +50,7 @@ class ExoskeletonRestApiCallsTest extends WP_UnitTestCase {
 	 * @return mixed returns the data that was input to provide a valid output.
 	 */
 	public function custom_route_callback( $data ) {
-		return $data;
+		return new WP_REST_Response($data, 200);
 	}
 
 
@@ -58,26 +58,29 @@ class ExoskeletonRestApiCallsTest extends WP_UnitTestCase {
 	 * Check limits are honoured if a route is registered with exoskeleton limits.
 	 */
 	function test_pre_registered_custom_route_rules() {
-
+		global $wp_rest_server;
 		add_action( 'rest_api_init', function () {
-			register_rest_route( 'exoskeleton/v1', '/test/(?P<id>\d+)', array(
+			register_rest_route( 'exoskeleton/v1', '/test_pre_registered_custom_route_rules/(?P<id>\d+)', array(
 				'methods' => 'GET',
 				'callback' => [ $this, 'custom_route_callback' ],
 				'exoskeleton' => [
 				  'window' => 10,
+				  'method' => 'GET',
 				  'limit' => 5,
 				  'lockout' => 20,
 				],
-			) );
+			), true );
 		} );
+		do_action( 'rest_api_init', $wp_rest_server );
+
 		for ( $request = 1; $request <= 6; ++$request ) {
 			if ( $request < 5 ) {
-				$response = rest_do_request( new WP_REST_Request( 'GET', '/exoskeleton/v1/test/1' ) );
+				$response = rest_do_request( new WP_REST_Request( 'GET', '/exoskeleton/v1/test_pre_registered_custom_route_rules/1' ) );
 				$this->assertEquals( 200, $response->status );
 			} else {
 				$this->expectException( Exception::class );
 				$this->expectExceptionMessage( 'locked' );
-				$response = rest_do_request( new WP_REST_Request( 'GET', '/exoskeleton/v1/test/1' ) );
+				$response = rest_do_request( new WP_REST_Request( 'GET', '/exoskeleton/v1/test_pre_registered_custom_route_rules/1' ) );
 			}
 		}
 	}
@@ -183,6 +186,37 @@ class ExoskeletonRestApiCallsTest extends WP_UnitTestCase {
 	}
 
 
+	/**
+	 * Limits should apply across methods if multiple methods are specified
+	 *
+	 * @dataProvider limitTestingProvider
+	 * @param array $rule exoskeleton rule array.
+	 * @param array $test extra test data.
+	 */
+	public function test_limits_apply_across_methods_for_multi_method_rules( $rule, $test ) {
+		// make sure the created rule applies to any method
+		$rule['method'] = 'HEAD,GET';
+		$rule['treat_head_as_get'] = false;
+		$test['method'] = 'GET';
+		$this->assertTrue( exoskeleton_add_rule( $rule ) );
+		for ( $request = 1; $request <= $rule['limit'] + 1; ++$request ) {
+			if ( $request < ( $rule['limit'] - 1 ) ) {
+				// Initially test with one method
+				$response = rest_do_request( new WP_REST_Request( $test['method'], $rule['route'] ) );
+				$this->assertEquals( 200, $response->status );
+			} elseif ( $request == ( $rule['limit'] - 1 ) ) {
+				// Test second method allowed
+				$test['method'] = 'HEAD';
+				$response = rest_do_request( new WP_REST_Request( $test['method'], $rule['route'] ) );
+				$this->assertEquals( 200, $response->status );
+			} else {
+				// Now call over the limit and ensure it is limited
+				$this->expectException( Exception::class );
+				$this->expectExceptionMessage( 'locked' );
+				$response = rest_do_request( new WP_REST_Request( $test['method'], $rule['route'] ) );
+			}
+		}
+	}
 
 	/**
 	 * Data provider
