@@ -8,214 +8,150 @@
 /**
  * Sample test case.
  */
-class ExoskeletonRestApiCallsTest extends WP_UnitTestCase {
-
+class ExoskeletonRuleValidationTest extends WP_UnitTestCase {
 
 	/**
 	 * Pre test setup
 	 */
 	function setUp() {
-		parent::setUp();
-
-		// Clear existing rules.
-		$instance = Exoskeleton::get_instance();
-		$instance->rules = [];
-
-		add_action( 'rest_api_init', function () {
-			register_rest_route( 'exoskeleton/v1', '/exoskeleton/(?P<id>\d+)', array(
-				'methods' => 'GET',
-				'callback' => [ $this, 'custom_route_callback' ],
-			) );
-		} );
+			parent::setUp();
+			// Clear existing rules.
+			$instance = Exoskeleton::get_instance();
+			$instance->rules = [];
 	}
 
 
 	/**
-	 * Test key generation
+	 * Check that exoskeleton validates rules with an invalid rule
 	 *
-	 * @dataProvider limitTestingProvider
-	 * @param array $rule exoskeleton rule array.
-	 * @param array $test extra test data.
+	 * @dataProvider validRuleProvider
+	 * @param array $rule Valid exoskeleton rule definition.
 	 */
-	public function test_key_generation( $rule, $test ) {
-		exoskeleton_add_rule( $rule );
+	function test_validate_rule_fails_when_adding_invalid_rule( $rule ) {
 		$exoskeleton = Exoskeleton::get_instance();
-		$this->assertEquals( $test['key'], key( $exoskeleton->rules ) );
+		unset( $rule['method'] );
+		$this->assertFalse( $exoskeleton->validate_rule( $rule ) );
 	}
 
 	/**
-	 * Simple method to provide a callback for custom routes during testing
+	 * Check that exoskeleton validates rules with valid rule
 	 *
-	 * @param mixed $data data passed into the request for this route.
-	 * @return mixed returns the data that was input to provide a valid output.
+	 * @dataProvider validRuleProvider
+	 * @param array $rule Valid exoskeleton rule definition.
 	 */
-	public function custom_route_callback( $data ) {
-		return $data;
+	function test_validate_rule_passes_when_adding_a_valid_rule( $rule ) {
+		$exoskeleton = Exoskeleton::get_instance();
+		$this->assertTrue( $exoskeleton->validate_rule( $rule ) );
 	}
 
 
 	/**
-	 * Check limits are honoured if a route is registered with exoskeleton limits.
-	 */
-	function test_pre_registered_custom_route_rules() {
-
-		add_action( 'rest_api_init', function () {
-			register_rest_route( 'exoskeleton/v1', '/test/(?P<id>\d+)', array(
-				'methods' => 'GET',
-				'callback' => [ $this, 'custom_route_callback' ],
-				'exoskeleton' => [
-				  'window' => 10,
-				  'limit' => 5,
-				  'lockout' => 20,
-				],
-			) );
-		} );
-		for ( $request = 1; $request <= 6; ++$request ) {
-			if ( $request < 5 ) {
-				$response = rest_do_request( new WP_REST_Request( 'GET', '/exoskeleton/v1/test/1' ) );
-				$this->assertEquals( 200, $response->status );
-			} else {
-				$this->expectException( Exception::class );
-				$this->expectExceptionMessage( 'locked' );
-				$response = rest_do_request( new WP_REST_Request( 'GET', '/exoskeleton/v1/test/1' ) );
-			}
-		}
-	}
-
-
-	/**
-	 * Check that requests do get properly limited
+	 * Test validation passes available methods
 	 *
-	 * @dataProvider limitTestingProvider
-	 * @param array $rule exoskeleton rule array.
-	 * @param array $test extra test data.
+	 * @dataProvider validationMethodsProvider
+	 * @param string $method Valid method name for validation.
 	 */
-	public function test_limits_are_applied( $rule, $test ) {
-		if ( empty( $test['method'] ) ) {
-			$test['method'] = $rule['method'];
-		}
-		$this->assertTrue( exoskeleton_add_rule( $rule ) );
-		for ( $request = 1; $request <= $rule['limit'] + 1; ++$request ) {
-			if ( $request < $rule['limit'] ) {
-				$response = rest_do_request( new WP_REST_Request( $test['method'], $rule['route'] ) );
-				$this->assertEquals( 200, $response->status );
-			} else {
-				$this->expectException( Exception::class );
-				$this->expectExceptionMessage( 'locked' );
-				$response = rest_do_request( new WP_REST_Request( $test['method'], $rule['route'] ) );
-			}
-		}
-	}
-
-
-	/**
-	 * Make sure that requests falling outside the window do not get limited.
-	 *
-	 * @dataProvider limitTestingProvider
-	 * @param array $rule exoskeleton rule array.
-	 * @param array $test extra test data.
-	 */
-	public function test_limit_window_expiry( $rule, $test ) {
-		if ( empty( $test['method'] ) ) {
-			$test['method'] = $rule['method'];
-		}
-		$this->assertTrue( exoskeleton_add_rule( $rule ) );
-		for ( $request = 1; $request <= $rule['limit'] + 1; ++$request ) {
-			if ( $request < $rule['limit'] ) {
-				$response = rest_do_request( new WP_REST_Request( $test['method'], $rule['route'] ) );
-				$this->assertEquals( 200, $response->status );
-			} else {
-				sleep( $rule['window'] + 1 );
-				$response = rest_do_request( new WP_REST_Request( $test['method'], $rule['route'] ) );
-				$this->assertEquals( 200, $response->status );
-			}
-		}
+	public function test_validate_rule_passes_all_available_methods( $method ) {
+		$rule = $this->getValidRuleHelper();
+		$rule['method'] = $method;
+		$exoskeleton = Exoskeleton::get_instance();
+		$this->assertTrue( $this->invokeMethod( $exoskeleton, 'validate_rule', array( $rule ) ) );
 	}
 
 	/**
-	 * Limits should only be applied if the correct method is requested
+	 * Test validation fails is any required field is missing
 	 *
-	 * @dataProvider limitTestingProvider
-	 * @param array $rule exoskeleton rule array.
-	 * @param array $test extra test data.
+	 * @dataProvider requiredFieldsProvider
+	 * @param string $field required field names.
 	 */
-	public function test_different_methods_not_limited( $rule, $test ) {
-		// Change the test or rule method for testing.
-		if ( empty( $test['method'] ) ) {
-			$test['method'] = 'HEAD';
-		} else {
-			$rule['method'] = 'POST';
-		}
-		$this->assertTrue( exoskeleton_add_rule( $rule ) );
-		for ( $request = 1; $request <= $rule['limit'] + 1; ++$request ) {
-			$response = rest_do_request( new WP_REST_Request( $test['method'], $rule['route'] ) );
-			$this->assertEquals( 200, $response->status );
-		}
+	public function test_validate_rule_fails_missing_required_fields( $field ) {
+		$rule = $this->getValidRuleHelper();
+		unset( $rule[ $field ] );
+		$exoskeleton = Exoskeleton::get_instance();
+		$this->assertFalse( $this->invokeMethod( $exoskeleton, 'validate_rule', array( $rule ) ) );
 	}
-
 
 
 	/**
 	 * Data provider
 	 *
-	 * @return array exoskeleton rule information and test data.
+	 * @return array Valid exoskeleton rule methods
 	 */
-	public function limitTestingProvider() {
+	public function validationMethodsProvider() {
+		return [
+			[ 'GET' ],
+			[ 'POST' ],
+			[ 'PUT' ],
+			[ 'PATCH' ],
+			[ 'DELETE' ],
+			[ 'HEAD' ],
+			[ 'any' ],
+		];
+	}
+
+	/**
+	 * Data provider
+	 *
+	 * @return array Valid exoskeleton rule methods
+	 */
+	public function requiredFieldsProvider() {
+		return [
+			[ 'route' ],
+			[ 'method' ],
+			[ 'window' ],
+			[ 'limit' ],
+			[ 'lockout' ],
+			[ 'treat_head_like_get' ],
+		];
+	}
+
+	/**
+	 * Data provider
+	 *
+	 * @return array Valid exoskeleton rule methods
+	 */
+	public function validRuleProvider() {
 		return [
 			[
-				'rule' => [
+				[
 					'route' => '/wp/v2/posts',
-					'window' => 1,
-					'limit'	=> 3,
-					'lockout' => 5,
-					'method' => 'GET',
+					'window' => 5,
+					'limit'	=> 2,
+					'lockout' => 30,
+					'method' => 'any',
 					'treat_head_like_get' => false,
-				],
-				'test' => [
-					'key' => '01dd28291a6b5b95802281831ec3d6f5_GET',
-				],
-			],
-			[
-				'rule' => [
-					'route' => '/wp/v2/categories',
-					'window' => 2,
-					'limit'	=> 6,
-					'lockout' => 5,
-					'method' => 'GET',
-					'treat_head_like_get' => false,
-				],
-				'test' => [
-					'key' => 'fd568c1eb104fbad04765b9f2f0100ed_GET',
-				],
-			],
-			[
-				'rule' => [
-					'route' => '/wp/v2/categories',
-					'window' => 2,
-					'limit'	=> 10,
-					'lockout' => 5,
-					'method' => 'GET',
-					'treat_head_like_get' => true,
-				],
-				'test' => [
-					'method' => 'HEAD',
-					'key' => '6ae5a5054b0a306061f10b9c1b193183_GET',
-				],
-			],
-			[
-				'rule' => [
-					'route' => '/exoskeleton/v1/exoskeleton/10',
-					'window' => 1,
-					'limit'	=> 3,
-					'lockout' => 5,
-					'method' => 'GET',
-					'treat_head_like_get' => false,
-				],
-				'test' => [
-					'key' => 'b09a74d523deb0962e21cafaadc63679_GET',
 				],
 			],
 		];
+	}
+
+	/**
+	 * Get a single valid rule definition from the validRuleProvider
+	 *
+	 * @return array Valid Exoskeleton rule definition
+	 */
+	public function getValidRuleHelper() {
+		$rules = $this->validRuleProvider();
+		return $rules[0][0];
+
+	}
+
+
+	/**
+	 * Call protected/private method of a class.
+	 *
+	 * @param object $object    Instantiated object that we will run method on.
+	 * @param string $method_name Method name to call.
+	 * @param array  $parameters Array of parameters to pass into method.
+	 *
+	 * @return mixed Method return.
+	 */
+	public function invokeMethod( &$object, $method_name, array $parameters = array() ) {
+		$reflection = new \ReflectionClass( get_class( $object ) );
+		$method = $reflection->getMethod( $method_name );
+		$method->setAccessible( true );
+
+		return $method->invokeArgs( $object, $parameters );
 	}
 
 }
