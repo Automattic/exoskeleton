@@ -153,6 +153,35 @@ class ExoskeletonRestApiCallsTest extends WP_UnitTestCase {
 		}
 	}
 
+	/**
+	 * Limits should apply across methods if 'any' is the rule method
+	 *
+	 * @dataProvider limitTestingProvider
+	 * @param array $rule exoskeleton rule array.
+	 * @param array $test extra test data.
+	 */
+	public function test_limits_apply_across_methods_for_any( $rule, $test ) {
+		// make sure the created rule applies to any method
+		$rule['method'] = 'any';
+		if ( empty( $test['method'] ) ) {
+			$test['method'] = 'HEAD';
+		}
+		$this->assertTrue( exoskeleton_add_rule( $rule ) );
+		for ( $request = 1; $request <= $rule['limit'] + 1; ++$request ) {
+			if ( $request < $rule['limit'] ) {
+				// Initially test up to limit with one method
+				$response = rest_do_request( new WP_REST_Request( $test['method'], $rule['route'] ) );
+				$this->assertEquals( 200, $response->status );
+			} else {
+				// Now call a different method and ensure it is limited
+				$test['method'] = 'post';
+				$this->expectException( Exception::class );
+				$this->expectExceptionMessage( 'locked' );
+				$response = rest_do_request( new WP_REST_Request( $test['method'], $rule['route'] ) );
+			}
+		}
+	}
+
 
 
 	/**
