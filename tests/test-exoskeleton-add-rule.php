@@ -80,69 +80,33 @@ class ExoskeletonAddRuleTest extends WP_UnitTestCase {
 
 	/**
 	 * Test adding a valid rule
+	 *
+	 * @dataProvider validRuleProvider
+	 * @param array $rule Valid exoskeleton rule definition.
 	 */
-	function test_add_valid_rule() {
+	function test_add_valid_rule($rule) {
 
-		$this->assertTrue( exoskeleton_add_rule( $this::$single_valid_rule ) );
+		$this->assertTrue( exoskeleton_add_rule( $rule ) );
 	}
 
 	/**
-	 * Test adding a valid rule - missing method
+	 * Test adding rule fails if any required field is missing
+	 *
+	 * @dataProvider requiredFieldsProvider
+	 * @param string $field required field names.
 	 */
-	function test_add_valid_rule_missing_method() {
-		$args =	$this::$single_valid_rule;
-		unset( $args['method'] );
-
-		$this->assertTrue( exoskeleton_add_rule( $args ) );
-	}
-
-	/**
-	 * Test adding an invalid rule - missing route
-	 */
-	function test_add_invalid_rule_missing_route() {
-		$args =	$this::$single_valid_rule;
-		unset( $args['route'] );
-
-		$this->assertFalse( exoskeleton_add_rule( $args ) );
-	}
-
-	/**
-	 * Test adding an invalid rule - missing window
-	 */
-	function test_add_invalid_rule_missing_window() {
-		$args =	$this::$single_valid_rule;
-		unset( $args['window'] );
-
-		$this->assertFalse( exoskeleton_add_rule( $args ) );
-	}
-
-	/**
-	 * Test adding an invalid rule - missing limit
-	 */
-	function test_add_invalid_rule_missing_limit() {
-		$args =	$this::$single_valid_rule;
-		unset( $args['limit'] );
-
-		$this->assertFalse( exoskeleton_add_rule( $args ) );
-	}
-
-	/**
-	 * Test adding an invalid rule - missing lockout
-	 */
-	function test_add_invalid_rule_missing_lockout() {
-		$args =	$this::$single_valid_rule;
-		unset( $args['lockout'] );
-
-		$this->assertFalse( exoskeleton_add_rule( $args ) );
+	public function test_adding_rule_fails_missing_required_fields( $field ) {
+		$rule = $this->getValidRuleHelper();
+		unset( $rule[ $field ] );
+		$this->assertFalse( exoskeleton_add_rule( $rule ) );
 	}
 
 	/**
 	 * Test adding multiple valid rules
 	 */
 	function test_adding_multiple_valid_rules() {
-		$args =	$this::$three_valid_rules;
-
-		$this->assertNull( exoskeleton_add_rules( $args ) );
+		$ruleset = $this->validRuleProvider();
+		$this->assertNull( exoskeleton_add_rules( $ruleset[0] ) );
 		$instance = Exoskeleton::get_instance();
 		$this->assertEquals( 3, count( $instance->rules ) );
 	}
@@ -163,39 +127,85 @@ class ExoskeletonAddRuleTest extends WP_UnitTestCase {
 	/**
 	 * Test adding a valid rule for a custom route
 	 * Exoskeleton makes no check for existence of custom route.
+	 *
+	 * @dataProvider validRuleProvider
+	 * @param array $rule Valid exoskeleton rule definition.
 	 */
-	function test_add_valid_custom_route_rule() {
-		$args =	$this::$single_valid_rule;
-		$args['route'] = '/custom/route/that/does/not/exist';
+	function test_add_valid_custom_route_rule($rule) {
+		$rule['route'] = '/custom/route/that/does/not/exist';
 
-		$this->assertTrue( exoskeleton_add_rule( $args ) );
+		$this->assertTrue( exoskeleton_add_rule( $rule ) );
 	}
 
 	/**
 	 * Check that exoskeleton will not overwrite an already existing rule
+	 * @dataProvider validRuleProvider
+	 * @param array $rule Valid exoskeleton rule definition.
 	 */
-	function test_internal_add_rule_method_fails_when_adding_existing_rule() {
+	function test_internal_add_rule_method_fails_when_adding_existing_rule($rule) {
 		$exoskeleton = Exoskeleton::get_instance();
-		$this->assertTrue( exoskeleton_add_rule( $this::$single_valid_rule ) );
-		$this->assertFalse( $exoskeleton->add_rule( $this::$single_valid_rule ) );
+		$this->assertTrue( exoskeleton_add_rule( $rule ) );
+		$this->assertFalse( $exoskeleton->add_rule( $rule ) );
+	}
+
+
+	/**
+	 * Provides required fields for exoskeleton_add_rule
+	 * Both the method and treat_head_like_get fields are defaulted
+	 * when called via the add_rule method so are not required here
+	 *
+	 * @return array Valid exoskeleton rule methods
+	 */
+	public function requiredFieldsProvider() {
+		return [
+			[ 'route' ],
+			[ 'window' ],
+			[ 'limit' ],
+			[ 'lockout' ],
+		];
+	}
+
+
+	/**
+	 * Provides valid exoskeleton rule definitions
+	 *
+	 * @return array Valid exoskeleton rule methods
+	 */
+	public function validRuleProvider() {
+		return [
+			[
+				[
+					'route' => '/wp/v2/posts',
+					'window' => 10,
+					'limit'	=> 25,
+					'lockout' => 200,
+					'method' => 'any',
+				],[
+					'route' => '/wp/v2/post/1',
+					'window' => 100,
+					'limit'	=> 5,
+					'lockout' => 60,
+					'method' => 'GET',
+				],[
+					'route' => '/wp/v2/post/2',
+					'window' => 90,
+					'limit'	=> 2,
+					'lockout' => 30,
+					'method' => 'GET',
+				],
+			],
+		];
 	}
 
 	/**
-	 * Check that exoskeleton validates rules with false rule
+	 * Get a single valid rule definition from the validRuleProvider
+	 *
+	 * @return array Valid Exoskeleton rule definition
 	 */
-	function test_internal_validate_rule_method_fails_when_adding_invalid_rule() {
-		$exoskeleton = Exoskeleton::get_instance();
-		$invalid_rule = $this::$single_valid_rule;
-		unset( $invalid_rule['method'] );
-		$this->assertFalse( $exoskeleton->validate_rule( $invalid_rule ) );
-	}
+	public function getValidRuleHelper() {
+		$rules = $this->validRuleProvider();
+		return $rules[0][0];
 
-	/**
-	 * Check that exoskeleton validates rules with valid rule
-	 */
-	function test_internal_validate_rule_method_fails_when_adding_a_valid_rule() {
-		$exoskeleton = Exoskeleton::get_instance();
-		$this->assertTrue( $exoskeleton->validate_rule( $this::$single_valid_rule ) );
 	}
 
 }
