@@ -71,6 +71,19 @@ class ExoskeletonRuleValidationTest extends WP_UnitTestCase {
 		$this->assertFalse( $this->invokeMethod( $exoskeleton, 'validate_rule', array( $rule ) ) );
 	}
 
+	/**
+	 * Test validation fails if fields contain invalid data
+	 *
+	 * @dataProvider invalidFieldValueProvider
+	 * @param string $field array field_name => invalid_test_value.
+	 */
+	public function test_validate_rule_fails_invalid_field_values( $field ) {
+		$rule = $this->getValidRuleHelper();
+		$rule[ key( $field ) ] = $field;
+		$exoskeleton = Exoskeleton::get_instance();
+		$this->assertFalse( $this->invokeMethod( $exoskeleton, 'validate_rule', array( $rule ) ) );
+	}
+
 
 	/**
 	 * Data provider
@@ -102,6 +115,34 @@ class ExoskeletonRuleValidationTest extends WP_UnitTestCase {
 			[ 'limit' ],
 			[ 'lockout' ],
 			[ 'treat_head_like_get' ],
+		];
+	}
+
+	/**
+	 * Data provider
+	 *
+	 * @return array Valid exoskeleton rule methods
+	 */
+	public function invalidFieldValueProvider() {
+		return [
+			[
+				[ 'window' => 'string', ],
+			],
+			[
+				[ 'window' => -1, ],
+			],
+			[
+				[ 'limit' => 'string', ],
+			],
+			[
+				[ 'limit' => -1, ],
+			],
+			[
+				[ 'lockout' => 'string', ],
+			],
+			[
+				[ 'treat_head_like_get' => 'string', ],
+			],
 		];
 	}
 
