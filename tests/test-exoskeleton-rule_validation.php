@@ -126,22 +126,34 @@ class ExoskeletonRuleValidationTest extends WP_UnitTestCase {
 	public function invalidFieldValueProvider() {
 		return [
 			[
-				[ 'window' => 'string', ],
+				[
+					'window' => 'string',
+				],
 			],
 			[
-				[ 'window' => -1, ],
+				[
+					'window' => -1,
+				],
 			],
 			[
-				[ 'limit' => 'string', ],
+				[
+					'limit' => 'string',
+				],
 			],
 			[
-				[ 'limit' => -1, ],
+				[
+					'limit' => -1,
+				],
 			],
 			[
-				[ 'lockout' => 'string', ],
+				[
+					'lockout' => 'string',
+				],
 			],
 			[
-				[ 'treat_head_like_get' => 'string', ],
+				[
+					'treat_head_like_get' => 'string',
+				],
 			],
 		];
 	}

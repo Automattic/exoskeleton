@@ -50,7 +50,7 @@ class ExoskeletonRestApiCallsTest extends WP_UnitTestCase {
 	 * @return mixed returns the data that was input to provide a valid output.
 	 */
 	public function custom_route_callback( $data ) {
-		return new WP_REST_Response($data, 200);
+		return new WP_REST_Response( $data, 200 );
 	}
 
 
@@ -204,7 +204,7 @@ class ExoskeletonRestApiCallsTest extends WP_UnitTestCase {
 				// Initially test with one method
 				$response = rest_do_request( new WP_REST_Request( $test['method'], $rule['route'] ) );
 				$this->assertEquals( 200, $response->status );
-			} elseif ( $request == ( $rule['limit'] - 1 ) ) {
+			} elseif ( ( $rule['limit'] - 1 ) === $request ) {
 				// Test second method allowed
 				$test['method'] = 'HEAD';
 				$response = rest_do_request( new WP_REST_Request( $test['method'], $rule['route'] ) );
