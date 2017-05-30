@@ -295,7 +295,7 @@ class Exoskeleton {
 
 		// Do not die if testing.
 		if ( defined( 'PHPUNIT_EXOSKELETON_TESTING' ) ) {
-			throw new Exception('locked');
+			throw new Exception( 'locked' );
 		}
 
 		die();
