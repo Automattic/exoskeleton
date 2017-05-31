@@ -10,50 +10,14 @@
  */
 class ExoskeletonAddRuleTest extends WP_UnitTestCase {
 
-
 	/**
-	 * Three rule definitions
-	 *
-	 * @var array Three valid rule definitions
+	 * Post test cleanup
 	 */
-	protected static $three_valid_rules;
-
-	/**
-	 * Define some valid rule sets to reduce duplication in tests.
-	 */
-	static function setUpBeforeClass() {
-		parent::setUpBeforeClass();
-
-		self::$three_valid_rules = array(
-			[
-				'route' => '/wp/v2/posts',
-				'window' => 10,
-				'limit'	=> 25,
-				'lockout' => 200,
-				'method' => 'any',
-			],[
-				'route' => '/wp/v2/post/1',
-				'window' => 100,
-				'limit'	=> 5,
-				'lockout' => 60,
-				'method' => 'GET',
-			],[
-				'route' => '/wp/v2/post/2',
-				'window' => 90,
-				'limit'	=> 2,
-				'lockout' => 30,
-				'method' => 'GET',
-			],
-		);
-	}
-
-	/**
-	 * Pre test setup
-	 */
-	function setUp() {
+	function tearDown() {
+		parent::tearDown();
+		// Clear up any added rules
 		$instance = Exoskeleton::get_instance();
 		$instance->rules = [];
-
 	}
 
 	/**
@@ -70,17 +34,14 @@ class ExoskeletonAddRuleTest extends WP_UnitTestCase {
 	 * @param array $rule Valid exoskeleton rule definition.
 	 */
 	function test_add_valid_rule( $rule ) {
-
 		$this->assertTrue( exoskeleton_add_rule( $rule ) );
 	}
 
 	/**
 	 * Test adding a valid rule with multiple methods
-	 *
-	 * @dataProvider validRuleProvider
-	 * @param array $rule Valid exoskeleton rule definition.
 	 */
-	function test_add_valid_rule_with_multiple_methods( $rule ) {
+	function test_add_valid_rule_with_multiple_methods() {
+		$rule = $this->getValidRuleHelper();
 		$rule['method'] = 'POST,GET';
 		$this->assertTrue( exoskeleton_add_rule( $rule ) );
 	}
@@ -123,10 +84,9 @@ class ExoskeletonAddRuleTest extends WP_UnitTestCase {
 	 * Test adding a valid rule for a custom route
 	 * Exoskeleton makes no check for existence of custom route.
 	 *
-	 * @dataProvider validRuleProvider
-	 * @param array $rule Valid exoskeleton rule definition.
 	 */
-	function test_add_valid_custom_route_rule( $rule ) {
+	function test_add_valid_custom_route_rule() {
+		$rule = $this->getValidRuleHelper();
 		$rule['route'] = '/custom/route/that/does/not/exist';
 
 		$this->assertTrue( exoskeleton_add_rule( $rule ) );
@@ -134,11 +94,9 @@ class ExoskeletonAddRuleTest extends WP_UnitTestCase {
 
 	/**
 	 * Check that exoskeleton will not overwrite an already existing rule
-	 *
-	 * @dataProvider validRuleProvider
-	 * @param array $rule Valid exoskeleton rule definition.
 	 */
-	function test_internal_add_rule_method_fails_when_adding_existing_rule( $rule ) {
+	function test_internal_add_rule_method_fails_when_adding_existing_rule() {
+		$rule = $this->getValidRuleHelper();
 		$exoskeleton = Exoskeleton::get_instance();
 		$this->assertTrue( exoskeleton_add_rule( $rule ) );
 		$this->assertFalse( $exoskeleton->add_rule( $rule ) );

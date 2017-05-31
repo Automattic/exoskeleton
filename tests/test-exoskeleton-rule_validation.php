@@ -11,36 +11,32 @@
 class ExoskeletonRuleValidationTest extends WP_UnitTestCase {
 
 	/**
-	 * Pre test setup
+	 * Post test cleanup
 	 */
-	function setUp() {
-			parent::setUp();
-			// Clear existing rules.
-			$instance = Exoskeleton::get_instance();
-			$instance->rules = [];
+	function tearDown() {
+		parent::tearDown();
+		// Clear up any added rules
+		$instance = Exoskeleton::get_instance();
+		$instance->rules = [];
 	}
 
 
 	/**
-	 * Check that exoskeleton validates rules with an invalid rule
-	 *
-	 * @dataProvider validRuleProvider
-	 * @param array $rule Valid exoskeleton rule definition.
+	 * Check that exoskeleton fails to validate an invalid rule
 	 */
-	function test_validate_rule_fails_when_adding_invalid_rule( $rule ) {
+	function test_validate_rule_fails_when_adding_invalid_rule() {
 		$exoskeleton = Exoskeleton::get_instance();
+		$rule = $this->getValidRuleHelper();
 		unset( $rule['method'] );
 		$this->assertFalse( $exoskeleton->validate_rule( $rule ) );
 	}
 
 	/**
 	 * Check that exoskeleton validates rules with valid rule
-	 *
-	 * @dataProvider validRuleProvider
-	 * @param array $rule Valid exoskeleton rule definition.
 	 */
-	function test_validate_rule_passes_when_adding_a_valid_rule( $rule ) {
+	function test_validate_rule_passes_when_adding_a_valid_rule() {
 		$exoskeleton = Exoskeleton::get_instance();
+		$rule = $this->getValidRuleHelper();
 		$this->assertTrue( $exoskeleton->validate_rule( $rule ) );
 	}
 
@@ -158,34 +154,21 @@ class ExoskeletonRuleValidationTest extends WP_UnitTestCase {
 		];
 	}
 
-	/**
-	 * Data provider
-	 *
-	 * @return array Valid exoskeleton rule methods
-	 */
-	public function validRuleProvider() {
-		return [
-			[
-				[
-					'route' => '/wp/v2/posts',
-					'window' => 5,
-					'limit'	=> 2,
-					'lockout' => 30,
-					'method' => 'any',
-					'treat_head_like_get' => false,
-				],
-			],
-		];
-	}
 
 	/**
-	 * Get a single valid rule definition from the validRuleProvider
+	 * Get a single valid rule definition 
 	 *
 	 * @return array Valid Exoskeleton rule definition
 	 */
 	public function getValidRuleHelper() {
-		$rules = $this->validRuleProvider();
-		return $rules[0][0];
+		return [
+			'route' => '/wp/v2/posts',
+			'window' => 5,
+			'limit'	=> 2,
+			'lockout' => 30,
+			'method' => 'any',
+			'treat_head_like_get' => false,
+		];
 
 	}
 

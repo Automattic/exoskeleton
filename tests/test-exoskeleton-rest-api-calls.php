@@ -17,10 +17,6 @@ class ExoskeletonRestApiCallsTest extends WP_UnitTestCase {
 	function setUp() {
 		parent::setUp();
 
-		// Clear existing rules.
-		$instance = Exoskeleton::get_instance();
-		$instance->rules = [];
-
 		add_action( 'rest_api_init', function () {
 			register_rest_route( 'exoskeleton/v1', '/exoskeleton/(?P<id>\d+)', array(
 				'methods' => 'GET',
@@ -29,6 +25,16 @@ class ExoskeletonRestApiCallsTest extends WP_UnitTestCase {
 		} );
 	}
 
+
+	/**
+	 * Post test cleanup
+	 */
+	function tearDown() {
+		parent::tearDown();
+		// Clear up any added rules
+		$instance = Exoskeleton::get_instance();
+		$instance->rules = [];
+	}
 
 	/**
 	 * Test key generation
