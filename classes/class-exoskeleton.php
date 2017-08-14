@@ -105,7 +105,7 @@ class Exoskeleton {
 			$available_methods = 'GET, POST, PUT, PATCH, DELETE, HEAD, any';
 		}
 
-		$valid = true;	//innocent until proven guilty
+		$valid = true;  //innocent until proven guilty
 
 		foreach ( $required as $key ) {
 
@@ -124,7 +124,7 @@ class Exoskeleton {
 					case 'treat_head_like_get':
 						$valid = is_bool( $args[ $key ] );
 						break;
-					case 'route':	//don't validate routes
+					case 'route':   //don't validate routes
 					default:
 						$valid = true;
 						break;
@@ -287,8 +287,8 @@ class Exoskeleton {
 
 		$lockout = $matched_rule[ $rule_id ]['lockout'];
 		$retry_after = ( isset( $lock['lock_set'] ) ) ? max( $lockout - ( time() - $lock['lock_set'] ), 1 ) : $lockout;
-		status_header( 429, 'Exoskeleton: too many requests for this endpoint.  Please consult Retry-After and come back later.  Meanwhile enjoy a well-deserved REST');
-		@header( "Retry-After: $retry_after");
+		status_header( 429, 'Exoskeleton: too many requests for this endpoint.  Please consult Retry-After and come back later.  Meanwhile enjoy a well-deserved REST' );
+		@header( "Retry-After: $retry_after" );
 		@header( "Cache-Control: public max-age=$retry_after" );
 		status_header( 429, 'Exoskeleton: too many requests for this endpoint.  Please consult Retry-After and come back later.  Meanwhile enjoy a well-deserved REST' );
 		@header( "Retry-After: $retry_after" );
